@@ -15,17 +15,23 @@ namespace sfmlib {
 		const Matching& matches,
 		Features& alignedLeft,
 		Features& alignedRight) {
-		vector<int> leftBackReference, rightBackReference;
-		GetAlignedPointsFromMatch(
-			leftFeatures,
-			rightFeatures,
-			matches,
-			alignedLeft,
-			alignedRight,
-			leftBackReference,
-			rightBackReference
-		);
 
+		alignedLeft.keyPoints.clear();
+		alignedRight.keyPoints.clear();
+		alignedLeft.descriptors = cv::Mat();
+		alignedRight.descriptors = cv::Mat();
+
+		// match의 queryIdx는 왼쪽의 인덱스 trainIdx는 오른쪽의 인덱스
+		for (unsigned int i = 0; i<matches.size(); i++) {
+			// 매치된 점의 키포인트와 기술어를 aligned에 추가
+			alignedLeft.keyPoints.push_back(leftFeatures.keyPoints[matches[i].queryIdx]);
+			alignedLeft.descriptors.push_back(leftFeatures.descriptors.row(matches[i].queryIdx));
+			alignedRight.keyPoints.push_back(rightFeatures.keyPoints[matches[i].trainIdx]);
+			alignedRight.descriptors.push_back(rightFeatures.descriptors.row(matches[i].trainIdx));
+		}
+		// Keypoint to 2D point
+		KeyPointsToPoints(alignedLeft.keyPoints, alignedLeft.points);
+		KeyPointsToPoints(alignedRight.keyPoints, alignedRight.points);
 	}
 
 	void GetAlignedPointsFromMatch(const Features& leftFeatures,
@@ -43,7 +49,7 @@ namespace sfmlib {
 
 		// match의 queryIdx는 왼쪽의 인덱스 trainIdx는 오른쪽의 인덱스
 		for (unsigned int i = 0; i<matches.size(); i++) {
-			// 매치된 점의 키포인트와 기술어를 alined에 추가
+			// 매치된 점의 키포인트와 기술어를 aligned에 추가
 			alignedLeft.keyPoints.push_back(leftFeatures.keyPoints[matches[i].queryIdx]);
 			alignedLeft.descriptors.push_back(leftFeatures.descriptors.row(matches[i].queryIdx));
 			alignedRight.keyPoints.push_back(rightFeatures.keyPoints[matches[i].trainIdx]);
@@ -91,7 +97,7 @@ namespace sfmlib {
 		prunedFeatures.descriptors = Mat();
 
 		for (size_t i = 0; i < features.keyPoints.size(); i++) {
-			if (mask.at<uchar>(i) > 0) {
+			if (mask.at<uchar>(i)) {
 				prunedFeatures.keyPoints.push_back(features.keyPoints[i]);
 				prunedFeatures.points.push_back(features.points[i]);
 				prunedFeatures.descriptors.push_back(features.descriptors.row(i));

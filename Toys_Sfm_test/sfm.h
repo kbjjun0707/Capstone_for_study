@@ -40,6 +40,7 @@ namespace sfmlib {
 		std::vector<cv::Mat>      mImages;
 		Intrinsics                mIntrinsics;
 		PointCloud                mReconstructionCloud;
+		PointCloudRGB			  mReconstructionCloudRGB;
 
 		float                     mDownscaleFactor;
 

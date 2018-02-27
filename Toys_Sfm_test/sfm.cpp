@@ -44,9 +44,10 @@ namespace sfmlib {
 		}
 
 		//initialize intrinsics
-		mIntrinsics.K = (Mat_<double>(3, 3) << 2500, 0, mImages[0].cols / 2,
-			0, 2500, mImages[0].rows / 2,
-			0, 0, 1);
+		mIntrinsics.K = cv::Mat(cv::Matx33d(
+			2500.0, 0, mImages[0].cols / 2.0,
+			0, 2500.0, mImages[0].rows / 2.0,
+			0, 0, 1));
 		mIntrinsics.Kinv = mIntrinsics.K.inv();
 		mIntrinsics.distortion = Mat_<double>::zeros(1, 4);
 		
@@ -61,7 +62,7 @@ namespace sfmlib {
 		// 3. Triangulation
 		findBaselineTriangulation();
 
-		// add more camera views to the map
+		// 4. 더 많은 뷰를 3차원 지도에 추가
 		addMoreViewsToReconstruction();
 
 		if (mConsoleDebugLevel <= LOG_INFO) {
@@ -278,6 +279,21 @@ namespace sfmlib {
 			mCameraPoses,
 			mIntrinsics,
 			mImageFeatures);
+
+		for (auto pc : mReconstructionCloud) {
+			sfmlib::Point3DInMapRGB tmp;
+			tmp.p = pc;
+			tmp.rgb = cv::Scalar(0, 0, 0);
+			int cnt = 0;
+			for (auto i : pc.originatingViews) {
+				cv::Point tmppt = mImageFeatures[i.first].points[i.second];
+				cv::Vec3b tmpbgr = mImages[i.first].at<cv::Vec3b>(tmppt);
+				tmp.rgb += cv::Scalar(tmpbgr[0], tmpbgr[1], tmpbgr[2]);
+				cnt++;
+			}
+			tmp.rgb /= cnt;
+			mReconstructionCloudRGB.push_back(tmp);
+		}
 	}
 
 
@@ -296,7 +312,7 @@ namespace sfmlib {
 				// 지나감
 				if (mFeatureMatchMatrix[i][j].size() < MIN_POINT_COUNT_FOR_HOMOGRAPHY) {
 					//Not enough points in matching
-					matchesSizes[1.0] = { i, j };
+					//matchesSizes[1.0] = { i, j };
 					continue;
 				}
 
@@ -310,7 +326,7 @@ namespace sfmlib {
 				matchesSizes[inliersRatio] = { i, j };
 
 				if (mConsoleDebugLevel <= LOG_DEBUG) {
-					cout << "Homography inliers ratio: " << i << ", " << j << " " << inliersRatio << endl;
+					cout << "Homography inliers ratio: [" << i << ", " << j << "]  " << inliersRatio << endl;
 				}
 			}
 		}

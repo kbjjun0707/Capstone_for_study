@@ -5,7 +5,7 @@ using namespace cv;
 using namespace std;
 
 namespace sfmlib {
-	const double RANSAC_THRESHOLD = 10.0f; // RANSAC inlier threshold
+	const double RANSAC_THRESHOLD = 9.0f; // RANSAC inlier threshold
 	const float MIN_REPROJECTION_ERROR = 10.0; // Maximum 10-pixel allowed re-projection error
 
 	SfMStereoUtilities::SfMStereoUtilities() {
@@ -69,8 +69,8 @@ namespace sfmlib {
 		// Essential Matrix 구하고
 		Mat E, R, t;
 		Mat mask;
-		// mask는 nomarlized 된 두 점 x, x`에 대하여 ((x`)^T)E(x) = 0 인 특성을 이용하여 결과가 좋고 안좋고를 걸러주는 듯 함.
-		E = findEssentialMat(alignedLeft.points, alignedRight.points, intrinsics.K, RANSAC, 0.999, 1.0, mask);
+		// mask는 Inliers를 나타냄. 두 점 x, x`에 대하여 ((x`)^T)E(x) = 0 인 특성을 이용하여 Essential matrix를 구함
+		E = findEssentialMat(alignedLeft.points, alignedRight.points, intrinsics.K, RANSAC, 0.998999999999999, 1.0, mask);
 		// Essential Matrix와 두 점들로 첫번째 카메라 기준의 R(3X3), t(3X1)를 구한다.
 		recoverPose(E, alignedLeft.points, alignedRight.points, intrinsics.K, R, t, mask);
 
@@ -84,7 +84,7 @@ namespace sfmlib {
 		// 매치 정보를 걸러서 prunedMatches에 다시 담는다
 		prunedMatches.clear();
 		for (size_t i = 0; i < mask.rows; i++) {
-			if (mask.at<uchar>(i)) {
+			if (mask.at<uchar>(i)>0) {
 				prunedMatches.push_back(matches[i]);
 			}
 		}
@@ -148,18 +148,18 @@ namespace sfmlib {
 		vector<Point2f> projectedOnRight(alignedRight.points.size());
 		projectPoints(points3d, rvecRight, tvecRight, intrinsics.K, intrinsics.distortion, projectedOnRight);
 
-		//    {
-		//		Mat outLeft(2048, 3072, CV_8UC3, Colors::BLACK);
-		//		drawKeypoints(outLeft, alignedLeft.keyPoints, outLeft, Colors::RED);
-		//		drawKeypoints(outLeft, PointsToKeyPoints(projectedOnLeft), outLeft, Colors::GREEN);
-		//		Mat outRight(2048, 3072, CV_8UC3, Colors::BLACK);
-		//		drawKeypoints(outRight, alignedRight.keyPoints, outRight, Colors::RED);
-		//		drawKeypoints(outRight, PointsToKeyPoints(projectedOnRight), outRight, Colors::GREEN);
-		//		Mat tmp;
-		//		hconcat(outLeft, outRight, tmp);
-		//		imshow("features", tmp, 0.25);
-		//		waitKey(0);
-		//    }
+		//{
+		//	Mat outLeft(2048, 3072, CV_8UC3, Colors::BLACK);
+		//	drawKeypoints(outLeft, alignedLeft.keyPoints, outLeft, Colors::RED);
+		//	drawKeypoints(outLeft, PointsToKeyPoints(projectedOnLeft), outLeft, Colors::GREEN);
+		//	Mat outRight(2048, 3072, CV_8UC3, Colors::BLACK);
+		//	drawKeypoints(outRight, alignedRight.keyPoints, outRight, Colors::RED);
+		//	drawKeypoints(outRight, PointsToKeyPoints(projectedOnRight), outRight, Colors::GREEN);
+		//	Mat tmp;
+		//	hconcat(outLeft, outRight, tmp);
+		//	imshow("features", tmp, 0.25);
+		//	waitKey(0);
+		//}
 		//Note: cheirality check (all points z > 0) was already performed at camera pose calculation
 
 		for (size_t i = 0; i < points3d.rows; i++) {

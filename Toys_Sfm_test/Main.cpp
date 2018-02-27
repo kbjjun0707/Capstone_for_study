@@ -4,12 +4,13 @@
 *	gflag
 *	Eigen
 **/
+//#define OPENCV_TRAITS_ENABLE_DEPRECATED
 #include "sfm.h"
 #include <opencv2\viz.hpp>
 
-#include <gl\glut.h>
-#include <gl\GLU.h>
-#include <gl\GL.h>
+//#include <gl\glut.h>
+//#include <gl\GLU.h>
+//#include <gl\GL.h>
 
 #include <iostream>
 using namespace std;
@@ -229,14 +230,14 @@ int main() {
 	//	//cv::imshow("Cam", ml_UndistortedFrame);
 	//	cv::imshow("Cam", ml_Frame);
 	//}
-
+	sfmtest.setConsoleDebugLevel(sfmlib::LOG_TRACE);
 	sfmtest.mImages.push_back(cv::imread("P1000965.JPG"));
 	sfmtest.mImages.push_back(cv::imread("P1000966.JPG"));
 	sfmtest.mImages.push_back(cv::imread("P1000967.JPG"));
 	sfmtest.mImages.push_back(cv::imread("P1000968.JPG"));
-	//sfmtest.mImages.push_back(cv::imread("P1000969.JPG"));
-	//sfmtest.mImages.push_back(cv::imread("P1000970.JPG"));
-	//sfmtest.mImages.push_back(cv::imread("P1000971.JPG"));
+	sfmtest.mImages.push_back(cv::imread("P1000969.JPG"));
+	sfmtest.mImages.push_back(cv::imread("P1000970.JPG"));
+	sfmtest.mImages.push_back(cv::imread("P1000971.JPG"));
 	
 	//sfmtest.mImages.push_back(cv::imread("kermit000.jpg"));
 	//sfmtest.mImages.push_back(cv::imread("kermit001.jpg"));
@@ -275,8 +276,13 @@ int main() {
 
 	// recover estimated points3d
 	vector<cv::Vec3f> point_cloud_est;
-	for (const sfmlib::Point3DInMap& p : sfmtest.mReconstructionCloud)
-		point_cloud_est.push_back(cv::Vec3f(p.p.x, p.p.y, p.p.z));
+	vector<cv::viz::Color> point_cloud_bgr;
+	//for (const sfmlib::Point3DInMap& p : sfmtest.mReconstructionCloud)
+	//	point_cloud_est.push_back(cv::Vec3f(p.p.x, p.p.y, p.p.z));
+	for (const auto p : sfmtest.mReconstructionCloudRGB) {
+		point_cloud_est.push_back(cv::Vec3f(p.p.p.x, p.p.p.y, p.p.p.z));
+		point_cloud_bgr.push_back(cv::viz::Color(p.rgb[0], p.rgb[1], p.rgb[2]));
+	}
 
 	cout << "[DONE]" << endl;
 
@@ -290,9 +296,7 @@ int main() {
 		cv::Mat tt = cv::Mat(sfmtest.mCameraPoses[i].col(3));
 		tR.convertTo(tR, CV_64FC1);
 		tt.convertTo(tt, CV_64FC1);
-
-		cout << tR << endl << tt << endl << endl;
-
+		
 		path.push_back(cv::Affine3d(tR, tt));
 	}
 
@@ -305,11 +309,14 @@ int main() {
 
 		cv::viz::WCloud cloud_widget(point_cloud_est, cv::viz::Color::green());
 		window.showWidget("point_cloud", cloud_widget);
+		window.setRenderingProperty("point_cloud", cv::viz::POINT_SIZE, 3);
 
 		cout << "[DONE]" << endl;
 	} else {
 		cout << "Cannot render points: Empty pointcloud" << endl;
 	}
+
+
 
 	cv::Matx33d K = cv::Matx33d(sfmtest.mIntrinsics.K.at<double>(0,0), 0, sfmtest.mIntrinsics.K.at<double>(0, 2),
 		0, sfmtest.mIntrinsics.K.at<double>(1, 1), sfmtest.mIntrinsics.K.at<double>(1, 2),

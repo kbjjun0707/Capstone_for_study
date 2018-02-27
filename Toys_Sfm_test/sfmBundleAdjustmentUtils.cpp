@@ -76,7 +76,7 @@ namespace sfmlib {
 
 		// Create residuals for each observation in the bundle adjustment problem. The
 		// parameters for cameras and points are added automatically.
-		//ceres::Problem problem;
+		ceres::Problem problem;
 
 		//Convert camera pose parameters from [R|t] (3x4) to [Angle-Axis (3), Translation (3), focal (1)] (1x7)
 		typedef cv::Matx<double, 1, 6> CameraVector;
@@ -122,41 +122,41 @@ namespace sfmlib {
 				p2d.x -= intrinsics.K.at<double>(0, 2);
 				p2d.y -= intrinsics.K.at<double>(1, 2);
 				
-				//// Each Residual block takes a point and a camera as input and outputs a 2
-				//// dimensional residual. Internally, the cost function stores the observed
-				//// image location and compares the reprojection against the observation.
-				//ceres::CostFunction* cost_function = SimpleReprojectionError::Create(p2d.x, p2d.y);
+				// Each Residual block takes a point and a camera as input and outputs a 2
+				// dimensional residual. Internally, the cost function stores the observed
+				// image location and compares the reprojection against the observation.
+				ceres::CostFunction* cost_function = SimpleReprojectionError::Create(p2d.x, p2d.y);
 
-				//problem.AddResidualBlock(cost_function,
-				//	NULL /* squared loss */,
-				//	cameraPoses6d[kv.first].val,
-				//	points3d[i].val,
-				//	&focal);
+				problem.AddResidualBlock(cost_function,
+					NULL /* squared loss */,
+					cameraPoses6d[kv.first].val,
+					points3d[i].val,
+					&focal);
 			}
 		}
 
-		//// Make Ceres automatically detect the bundle structure. Note that the
-		//// standard solver, SPARSE_NORMAL_CHOLESKY, also works fine but it is slower
-		//// for standard bundle adjustment problems.
-		//ceres::Solver::Options options;
-		//options.linear_solver_type = ceres::DENSE_SCHUR;
-		//options.minimizer_progress_to_stdout = true;
-		//options.max_num_iterations = 500;
-		//options.eta = 1e-2;
-		//options.max_solver_time_in_seconds = 10;
-		//options.logging_type = ceres::LoggingType::SILENT;
-		//ceres::Solver::Summary summary;
-		//ceres::Solve(options, &problem, &summary);
-		//std::cout << summary.BriefReport() << "\n";
+		// Make Ceres automatically detect the bundle structure. Note that the
+		// standard solver, SPARSE_NORMAL_CHOLESKY, also works fine but it is slower
+		// for standard bundle adjustment problems.
+		ceres::Solver::Options options;
+		options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
+		options.minimizer_progress_to_stdout = true;
+		options.max_num_iterations = 1000;
+		options.eta = 1e-2;
+		options.max_solver_time_in_seconds = 10;
+		options.logging_type = ceres::LoggingType::SILENT;
+		ceres::Solver::Summary summary;
+		ceres::Solve(options, &problem, &summary);
+		std::cout << summary.BriefReport() << "\n";
 
-		//if (!(summary.termination_type == ceres::CONVERGENCE)) {
-		//	cerr << "Bundle adjustment failed." << endl;
-		//	return;
-		//}
+		if (!(summary.termination_type == ceres::CONVERGENCE)) {
+			cerr << "Bundle adjustment failed." << endl;
+			return;
+		}
 
-		////update optimized focal
-		//intrinsics.K.at<double>(0, 0) = focal;
-		//intrinsics.K.at<double>(1, 1) = focal;
+		//update optimized focal
+		intrinsics.K.at<double>(0, 0) = focal;
+		intrinsics.K.at<double>(1, 1) = focal;
 
 		//Implement the optimized camera poses and 3D points back into the reconstruction
 		for (size_t i = 0; i < cameraPoses.size(); i++) {

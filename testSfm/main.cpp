@@ -1,9 +1,9 @@
 #define CERES_FOUND 1
+#define OPENCV_TRAITS_ENABLE_DEPRECATED
 
 #include <opencv2/sfm.hpp>
 #include <opencv2/viz.hpp>
 #include <opencv2\opencv.hpp>
-#include <opencvLibs.h>
 
 #include <iostream>
 #include <fstream>

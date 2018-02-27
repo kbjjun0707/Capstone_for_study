@@ -4,7 +4,7 @@
 #include <opencv2\opencv.hpp>
 #include <opencv2\sfm.hpp>
 #include <opencv2\xfeatures2d.hpp>
-#include <opencvLibs.h>
+//#include <opencvLibs.h>
 
 #include <map>
 
@@ -24,7 +24,7 @@ namespace sfmlib {
 	const cv::Rect TRA(3, 0, 1, 3);
 
 	///Minimal ratio of inliers-to-total number of points for computing camera pose
-	const float POSE_INLIERS_MINIMAL_RATIO = 0.5;
+	const float POSE_INLIERS_MINIMAL_RATIO = 0.40;
 
 	struct Intrinsics {
 		cv::Mat K;

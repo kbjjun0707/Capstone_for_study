@@ -20,7 +20,7 @@ namespace sfmlib {
 
 	Features SfM2DFeatureUtilities::extractFeatures(const cv::Mat& image) {
 		Features features;
-		mDetector->detectAndCompute(image, noArray(), features.keyPoints, features.descriptors);
+		mDetector->detectAndCompute(image, cv::Mat::ones(image.size(), CV_8UC1), features.keyPoints, features.descriptors);
 		KeyPointsToPoints(features.keyPoints, features.points);
 		return features;
 	}
